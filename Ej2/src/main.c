@@ -16,7 +16,7 @@
 #include "zeros.h"
 
 /*==================[macros and definitions]=================================*/
-#define ARRAY_SIZE 20
+
 /*==================[internal data declaration]==============================*/
 
 /*==================[internal functions declaration]=========================*/
@@ -48,7 +48,7 @@ int main(void)
 
 	initHardware();
 
-	Czeros(vector_zeros, longitud_vect);
+	//Czeros(vector_zeros, longitud_vect);
 	asmZeros(vector_zeros, longitud_vect);
 	longitud_vect = CSum(20, 30);
 

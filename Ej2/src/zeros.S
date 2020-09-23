@@ -25,10 +25,9 @@
 	.global asmZeros
 
 
-#define vector 	 r0
-#define longitud r1
-#define cont     r2
-#define aux		 r3
+#define cont r0
+#define long r1
+#define vect r2
 
 	/**
 	 * Indicamos que la siguiente subrutina debe ser ensamblada en modo thumb,
@@ -48,16 +47,15 @@
 */
 
 asmZeros:
-    push {r3, lr}  /* guardamos la direccion de retorno en la pila */
-    mov cont, longitud
+    push {lr}  /* guardamos la direccion de retorno en la pila */
+    mov cont,#10
     forloop:
-    	ldr aux,[vector, cont, LSL 2]
-    	mov aux, #0
-   	 	str aux,[vector, cont, LSL 2]
+   	 	mov vect, #0
     	subs cont,1
+    	ldr vect,[vect,cont]
     	cmp cont,#0
     	bne forloop
-	pop {r3, pc}   /* retorno */
+	pop {pc}   /* retorno */
 
 	/* otras alternativas para el retorno */
 	/* 1. mov pc,lr

@@ -18,6 +18,8 @@
 /*==================[macros and definitions]=================================*/
 
 /*==================[internal data declaration]==============================*/
+volatile uint32_t * DWT_CTRL   = (uint32_t *)0xE0001000;
+volatile uint32_t * DWT_CYCCNT = (uint32_t *)0xE0001004;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -43,14 +45,22 @@ static void initHardware(void)
 
 int main(void)
 {
+	volatile uint32_t cyclesC=0,cyclesAsm=0;
+
 	uint32_t longitud_vect = 10;
 	uint32_t vector_zeros[longitud_vect];
 
 	initHardware();
 
-	//Czeros(vector_zeros, longitud_vect);
+	*DWT_CTRL  |= 1;
+
+	*DWT_CYCCNT = 0;
+	Czeros(vector_zeros, longitud_vect);
+	cyclesC=*DWT_CYCCNT;
+
+	*DWT_CYCCNT = 0;
 	asmZeros(vector_zeros, longitud_vect);
-	longitud_vect = CSum(20, 30);
+	cyclesAsm=*DWT_CYCCNT;
 
 	while (1)
 	{

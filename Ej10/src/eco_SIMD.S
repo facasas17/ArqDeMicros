@@ -49,7 +49,7 @@
 	 * es decir que podemos verlo desde otros modulos (equivalente a extern).
      * Definimos la rutina como global para que sea visible desde otros modulos.
      */
-	.global eco
+	.global ecoSIMD
 
 	/**
 	 * Indicamos que la siguiente subrutina debe ser ensamblada en modo thumb,
@@ -62,47 +62,52 @@
 /**
  *	prototipo de la funcion en C
  *
- *	void pack32to16EnC (int32_t * vectorIn, int16_t *vectorOut, uint32_t longitud);
+ *  void ecoEnC (int16_t * vectorIn, int16_t *vectorEco, uint32_t longitud, uint32_t offsetEco);
  *
- *	En r0 se cargara vectorIn y en r1 se carga vectorOut y en r3 longitud.
 */
+#define ARRAY_ECO  6
 
 #define vectorIn 	r0
 #define vectorEco 	r1
 #define longitud	r2
 #define offsetEco	r3
-#define i			r4
-#define j			r5
-#define aux			r6
-#define ecoIn		r7
+#define j 			r4
+#define i 			r5
+#define division    r6
+#define actual		r7
+#define ceros       r8
+#define eco_cant	r9
 
-eco:
- 	push {r4-r7,lr}  		/* guardamos la direccion de retorno en la pila */
-	mov i, #0 		/* contador del loop, i = longitud vector*/
+ecoSIMD:
+ 	push {r3-r9,lr}  /* guardamos la direccion de retorno en la pila */
 
-	// REVISAR INDICE. SI HAY QUE RESTAR 1 O NO
+	mov i, #0 			/* contador del loop, i = 0*/
+	mov j, #0 			/* contador del loop, i = 0*/
+	asr  longitud,1		/* longitud <= longitud/2 porque trabajo con registros de 32b pero uso vectores de 16b*/
+	mov eco_cant, offsetEco
+	asr  eco_cant,1		/* eco_cant <= eco_cant/2 porque trabajo con la mitad de ciclos */
+
 loopSinEco:
-	ldrsh aux, [vectorIn, i, LSL 1]
-	strh aux, [vectorEco, i, LSL 1]
-	add i, #1
-	cmp i, offsetEco
-	bne loopSinEco
+  	ldr  actual, [vectorIn, i, LSL 2]	/* Me muevo de a 32 bits */
+  	str  actual, [vectorEco, i, LSL 2]
+  	add i, 1
+  	cmp i, eco_cant
+  	bne loopSinEco
 
-	mov j, #0
+	mov ceros, #0
 
 loopConEco:
-	ldrsh aux, [vectorIn, i, LSL 1]
-	ldrsh ecoIn, [vectorIn, j, LSL 1]
-	asr ecoIn, #1	/* ecoIn <= ecoIn / 2 */
-	adds aux, ecoIn	/* aux = aux + ecoIn*/
-	ssat aux, 16, aux
-	strh aux, [vectorEco, i, LSL 1]
-	add i, #1
-	add j, #1
-	cmp i, longitud
-	bne loopConEco
+  	ldr 	actual, [vectorIn, i, LSL 2]
+  	ldr 	division, [vectorIn, j, LSL 2]
+  	shadd16 division,division,ceros	/* Sumo ceros y divido por 2.  */
+  	qadd16	actual, actual, division
+	str  	actual, [vectorEco, i, LSL 2]
+  	add 	i, 1
+  	add 	j, 1
+  	cmp 	longitud, i
+  	bne 	loopConEco
 
-	pop {r4-r7, pc}	 /* retorno */
+	pop {r3-r9,pc}   /* retorno */
 
 	/* otras alternativas para el retorno */
 	/* 1. mov pc,lr

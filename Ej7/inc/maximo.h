@@ -30,83 +30,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
-/** @brief This is a simple blink example.
- */
 
-/** \addtogroup blink Bare-metal blink example
- ** @{ */
+#ifndef _MAXIMO_H_
+#define _MAXIMO_H_
 
 /*==================[inclusions]=============================================*/
+#include <stdint.h>
 
-#include "main.h"
-#include "eco.h"
-#include "board.h"
-#include <math.h>
+/*==================[cplusplus]==============================================*/
 
-/*==================[macros and definitions]=================================*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/*==================[internal data declaration]==============================*/
-// Contador de tiempo de ejecución
-volatile uint32_t * DWT_CTRL   = (uint32_t *)0xE0001000;
-volatile uint32_t * DWT_CYCCNT = (uint32_t *)0xE0001004;
-/*==================[internal functions declaration]=========================*/
+/*==================[macros]=================================================*/
+#define ARRAY_SIZE 10
 
-/** @brief hardware initialization function
- *	@return none
- */
-static void initHardware(void);
+#define MIN_VAL -2147483648
 
-/*==================[internal data definition]===============================*/
+/*==================[typedef]================================================*/
 
-/*==================[external data definition]===============================*/
+/*==================[external data declaration]==============================*/
 
-/*==================[internal functions definition]==========================*/
+/*==================[external functions declaration]=========================*/
+extern void maxAsm (int32_t * vectorIn, uint32_t longitud, uint32_t *indice);
+extern void maxC (int32_t * vectorIn, uint32_t longitud, uint32_t *indice);
 
-static void initHardware(void)
-{
-	Board_Init();
-	SystemCoreClockUpdate();
-	//SysTick_Config(SystemCoreClock / 1000);
+
+/*==================[cplusplus]==============================================*/
+
+#ifdef __cplusplus
 }
-
-/*==================[external functions definition]==========================*/
-
-int main(void)
-{
-	volatile uint32_t cyclesC=0,cyclesAsm=0,cyclesSIMD=0;
-	uint16_t i=0;
-	int16_t vectorIn[ARRAY_SIZE];
-	int16_t vectorEco[ARRAY_SIZE];
-
-	initHardware();
-
-    /* Se inicializa el array func con valores de 0 a ARRAY_SIZE */
-	for(i=0;i<ARRAY_SIZE;i++)
-		vectorIn[i]=10*sin(i);
-
-
-	*DWT_CTRL  |= 1;
-
-	*DWT_CYCCNT = 0;
-	ecoEnC (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
-	cyclesC=*DWT_CYCCNT;
-
-	*DWT_CYCCNT = 0;
-	eco (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
-	cyclesAsm=*DWT_CYCCNT;
-
-	*DWT_CYCCNT = 0;
-	ecoSIMD (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
-	cyclesSIMD=*DWT_CYCCNT;
-
-	while (1)
-	{
-		Board_LED_Toggle(LED);
-		__WFI(); //wfi
-	}
-}
+#endif
 
 /** @} doxygen end group definition */
-
 /*==================[end of file]============================================*/
+#endif /* #ifndef MAXIMO */

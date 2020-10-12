@@ -1,3 +1,5 @@
+/** Ejemplo de archivo de assembler */
+
 /* Copyright 2018, Facundo Larosa - Danilo Zecchin
  * All rights reserved.
  *
@@ -31,39 +33,71 @@
  *
  */
 
-#ifndef _ECO_H_
-#define _ECO_H_
+	/**
+	 * Directiva al ensablador que permite indicar que se encarga de buscar
+	 * la instruccion mas apropiada entre thumb y thumb2
+	 */
+	.syntax unified
 
-/*==================[inclusions]=============================================*/
-#include <stdint.h>
+	/**
+	 * .text permite indicar una seccion de codigo.
+	 */
+	.text
 
-/*==================[cplusplus]==============================================*/
+	/**
+	 * .global permite definir un simbolo exportable,
+	 * es decir que podemos verlo desde otros modulos (equivalente a extern).
+     * Definimos la rutina como global para que sea visible desde otros modulos.
+     */
+	.global maxAsm
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*==================[macros]=================================================*/
-#define ARRAY_SIZE  4096
-#define OFFSET_ECO	882
-#define MAX_BITS	32767
-
-/*==================[typedef]================================================*/
-
-/*==================[external data declaration]==============================*/
-
-/*==================[external functions declaration]=========================*/
-extern void eco (int16_t * vectorIn, int16_t *vectorEco, uint32_t longitud, uint32_t offsetEco);
-extern void ecoEnC (int16_t * vectorIn, int16_t *vectorEco, uint32_t longitud, uint32_t offsetEco);
-extern void ecoSIMD (int16_t * vectorIn, int16_t *vectorEco, uint32_t longitud, uint32_t offsetEco);
+	/**
+	 * Indicamos que la siguiente subrutina debe ser ensamblada en modo thumb,
+	 * entonces en las direcciones en el ultimo bit tendran el 1 para que se reconozcan como en modo thumb.
+	 * Siempre hay que ponerla antes de la primer instruccion.
+	 */
+	.thumb_func
 
 
-/*==================[cplusplus]==============================================*/
+/**
+ *	prototipo de la funcion en C
+ *
+ *	void maxC (int32_t * vectorIn, uint32_t longitud, uint32_t *indice);
+ *
+ *	En r0 se cargara vectorIn y en r1 se carga longitud.
+*/
 
-#ifdef __cplusplus
-}
-#endif
+#define vectorIn 	r0
+#define longitud 	r1
+#define indiceMax	r2
+#define i			r3
+#define max			r4
+#define aux			r5
+#define aux_indice	r6
 
-/** @} doxygen end group definition */
-/*==================[end of file]============================================*/
-#endif /* #ifndef PRODUCTOESCALAR12 */
+maxAsm:
+ 	push {r4-r5,lr}  	/* guardamos la direccion de retorno en la pila */
+
+	mov i, #0 			/* contador del loop, i = 0 */
+	ldr max, [vectorIn, i, LSL 1]	/* Cargo el 1er valor del vector para comparar */
+
+loop:
+	ldr aux, [vectorIn, i, LSL 1]
+	cmp aux, max
+	ble indice
+loopmax:
+	mov aux_indice, i
+	mov max, aux
+indice:
+	add i, #1
+	cmp i, longitud
+	bne loop
+
+	str aux_indice, [indiceMax]
+
+	pop {r4-r5, pc}	 /* retorno */
+
+	/* otras alternativas para el retorno */
+	/* 1. mov pc,lr
+	/  2. bx lr */
+	/* pop {pc} */

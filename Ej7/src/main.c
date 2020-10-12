@@ -40,9 +40,9 @@
 /*==================[inclusions]=============================================*/
 
 #include "main.h"
-#include "eco.h"
+#include "maximo.h"
 #include "board.h"
-#include <math.h>
+#include "math.h"
 
 /*==================[macros and definitions]=================================*/
 
@@ -75,30 +75,32 @@ static void initHardware(void)
 int main(void)
 {
 	volatile uint32_t cyclesC=0,cyclesAsm=0,cyclesSIMD=0;
-	uint16_t i=0;
-	int16_t vectorIn[ARRAY_SIZE];
-	int16_t vectorEco[ARRAY_SIZE];
+	int32_t vectorIn[ARRAY_SIZE];
+	int32_t indiceMax = 0;
+	uint32_t i=0;
 
 	initHardware();
 
-    /* Se inicializa el array func con valores de 0 a ARRAY_SIZE */
-	for(i=0;i<ARRAY_SIZE;i++)
-		vectorIn[i]=10*sin(i);
+    /* Se inicializa el array func con valores de 0 a ARRAY_SIZE *2 */
+	for( i=0; i<ARRAY_SIZE ;i++ )
+		vectorIn[i]=2*i;
 
 
 	*DWT_CTRL  |= 1;
 
 	*DWT_CYCCNT = 0;
-	ecoEnC (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
+	maxC (vectorIn, ARRAY_SIZE, &indiceMax);
 	cyclesC=*DWT_CYCCNT;
 
-	*DWT_CYCCNT = 0;
-	eco (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
-	cyclesAsm=*DWT_CYCCNT;
+	indiceMax = 0;
 
 	*DWT_CYCCNT = 0;
-	ecoSIMD (vectorIn, vectorEco, ARRAY_SIZE, OFFSET_ECO);
-	cyclesSIMD=*DWT_CYCCNT;
+	maxAsm (vectorIn, ARRAY_SIZE, &indiceMax);
+	cyclesAsm=*DWT_CYCCNT;
+
+//	*DWT_CYCCNT = 0;
+//	resultSIMD=avgWindowSIMD (func, ARRAY_SIZE, n_samples, delta_samples);
+//	cyclesSIMD=*DWT_CYCCNT;
 
 	while (1)
 	{

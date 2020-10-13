@@ -49,7 +49,7 @@
 	 * es decir que podemos verlo desde otros modulos (equivalente a extern).
      * Definimos la rutina como global para que sea visible desde otros modulos.
      */
-	.global maxAsm
+	.global avgDifferenceASM
 
 	/**
 	 * Indicamos que la siguiente subrutina debe ser ensamblada en modo thumb,
@@ -62,38 +62,43 @@
 /**
  *	prototipo de la funcion en C
  *
- *	void maxC (int32_t * vectorIn, uint32_t longitud, uint32_t *indice);
+ *	void avgDifferenceC (uint8_t * vecIn, uint8_t * vecOut, uint32_t length);
  *
- *	En r0 se cargara vectorIn y en r1 se carga longitud.
+ *	En r0 se cargara vecIn, en r1 vecOut y en r2 length.
 */
 
-#define vectorIn 	r0
-#define longitud 	r1
-#define indiceMax	r2
-#define i			r3
-#define max			r4
-#define aux			r5
-#define aux_indice	r6
+#define vecIn 	r0
+#define vecOut 	r1
+#define length	r2
+#define i		r3
+#define avg		r4
+#define aux		r5
 
-maxAsm:
+avgDifferenceASM:
  	push {r4-r5,lr}  	/* guardamos la direccion de retorno en la pila */
 
-	mov i, #0 			/* contador del loop, i = 0 */
-	ldr max, [vectorIn, i, LSL 1]	/* Cargo el 1er valor del vector para comparar */
+ 	mov i, #0			/* Inicio contador de loop */
+ 	mov avg, #0
 
-loop:
-	ldr aux, [vectorIn, i, LSL 1]
-	cmp aux, max
-	ble indice
-loopmax:
-	mov aux_indice, i
-	mov max, aux
-indice:
+loopAvg:
+	ldrb aux, [vecIn, i]	/* Cargo aux=*(vecIn+i) */
+	add avg, avg, aux
+	add i, #1				/* Me desplazo de a 1 porque estan en bloques de 8bits */
+	usat avg, 8, avg		/* Chequeo saturacion */
+	cmp i, length
+	bne loopAvg
+	udiv avg, avg, length
+
+	mov i, #0
+
+loopDiff:
+	ldrb aux, [vecIn, i]	/* Cargo aux=*(vecIn+i) */
+	subs aux, aux, avg
+	usat aux, 8, aux		/* Chequeo saturacion */
+	strb aux, [vecOut, i]
 	add i, #1
-	cmp i, longitud
-	bne loop
-
-	str aux_indice, [indiceMax]
+	cmp i, length
+	bne loopDiff
 
 	pop {r4-r5, pc}	 /* retorno */
 
